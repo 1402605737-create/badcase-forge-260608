@@ -1,0 +1,35 @@
+# Dependencies and builds
+node_modules/
+dist/
+backend/node_modules/
+backend/.vercel/
+.vercel/
+
+# Environment and secrets
+.env*
+!.env.example
+*.secret
+*.secrets
+*secret*.txt
+*password*.txt
+*connection*.txt
+*credentials*.json
+
+# Logs and temporary files
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+.tmp/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
