@@ -1,6 +1,6 @@
 # 坏例工坊 Bad Case Agent Ops
 
-- GitHub：部署完成后写入
+- GitHub：https://github.com/1402605737-create/badcase-forge-260608
 - Demo：https://badcase-forge-260608-web.vercel.app
 - Health：https://badcase-forge-260608-api.vercel.app/health
 
