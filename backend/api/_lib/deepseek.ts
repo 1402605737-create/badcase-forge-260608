@@ -46,18 +46,39 @@ fix_plan：可执行修复动作数组；
 eval_cases：至少 2 条评测，每条包含 prompt、assertion、risk；
 human_gate_required：P0/P1 必须为 true。`;
 
+const validSeverities = ["P0", "P1", "P2", "P3"] as const;
+
 function isAgentResult(value: unknown): value is AgentResult {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<AgentResult>;
   return (
     typeof candidate.failure_mode === "string" &&
-    ["P0", "P1", "P2", "P3"].includes(candidate.severity ?? "") &&
+    validSeverities.includes(candidate.severity as AgentResult["severity"]) &&
     typeof candidate.root_cause === "string" &&
     typeof candidate.risk === "string" &&
     Array.isArray(candidate.fix_plan) &&
     Array.isArray(candidate.eval_cases) &&
     typeof candidate.human_gate_required === "boolean"
   );
+}
+
+export function normalizeAgentResult(result: AgentResult): AgentResult {
+  const severity = validSeverities.includes(result.severity) ? result.severity : "P2";
+  const evalCases = result.eval_cases
+    .filter((item) => item && typeof item.prompt === "string" && typeof item.assertion === "string")
+    .map((item) => ({
+      prompt: item.prompt,
+      assertion: item.assertion,
+      risk: validSeverities.includes(item.risk) ? item.risk : severity
+    }));
+
+  return {
+    ...result,
+    failure_mode: result.failure_mode.slice(0, 64),
+    severity,
+    eval_cases: evalCases,
+    human_gate_required: severity === "P0" || severity === "P1" ? true : result.human_gate_required
+  };
 }
 
 export async function runDeepSeekAgent(input: BadCaseInput): Promise<AgentRunOutput> {
@@ -101,14 +122,12 @@ export async function runDeepSeekAgent(input: BadCaseInput): Promise<AgentRunOut
     throw new Error("DeepSeek returned empty content");
   }
 
-  const result = JSON.parse(content) as unknown;
-  if (!isAgentResult(result)) {
+  const parsedResult = JSON.parse(content) as unknown;
+  if (!isAgentResult(parsedResult)) {
     throw new Error("DeepSeek returned an invalid agent result");
   }
 
-  if (result.severity === "P0" || result.severity === "P1") {
-    result.human_gate_required = true;
-  }
+  const result = normalizeAgentResult(parsedResult);
 
   return {
     result,

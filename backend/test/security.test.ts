@@ -41,3 +41,20 @@ test("database verifier checks role isolation privileges", async () => {
   assert.match(verifier, /has_schema_privilege\(current_user, 'public', 'CREATE'\)/);
   assert.match(verifier, /has_database_privilege\(current_user, current_database\(\), 'CREATE'\)/);
 });
+
+test("agent output normalizes eval risk before database writes", async () => {
+  const { normalizeAgentResult } = await import("../api/_lib/deepseek.js");
+  const normalized = normalizeAgentResult({
+    failure_mode: "x".repeat(80),
+    severity: "P1",
+    root_cause: "root",
+    risk: "risk",
+    fix_plan: ["fix"],
+    eval_cases: [{ prompt: "prompt", assertion: "assertion", risk: "P0/P1" as "P0" }],
+    human_gate_required: false
+  });
+
+  assert.equal(normalized.failure_mode.length, 64);
+  assert.equal(normalized.eval_cases[0].risk, "P1");
+  assert.equal(normalized.human_gate_required, true);
+});
