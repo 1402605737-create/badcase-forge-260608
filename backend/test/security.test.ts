@@ -34,3 +34,10 @@ test("CORS default is the dedicated frontend origin", async () => {
   const constants = await import("../api/_lib/constants.js");
   assert.equal(constants.EXPECTED_FRONTEND_ORIGIN, "https://badcase-forge-260608-web.vercel.app");
 });
+
+test("database verifier checks role isolation privileges", async () => {
+  const verifier = await readFile(new URL("../scripts/verify-db.mjs", import.meta.url), "utf8");
+  assert.match(verifier, /has_schema_privilege\(current_user, 'badcase_forge_260608', 'USAGE'\)/);
+  assert.match(verifier, /has_schema_privilege\(current_user, 'public', 'CREATE'\)/);
+  assert.match(verifier, /has_database_privilege\(current_user, current_database\(\), 'CREATE'\)/);
+});
